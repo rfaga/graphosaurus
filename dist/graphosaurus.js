@@ -41742,9 +41742,9 @@ module.exports = (function () {
 
     Frame.prototype._initMouseEvents = function (elem) {
         var self = this;
-        var previousNode = null;
         var createMouseHandler = function (callback, noResultCallback) {
             var raycaster = new THREE.Raycaster();
+            var previousNode = null;
 
             return function (evt) {
                 evt.preventDefault();
@@ -41776,6 +41776,9 @@ module.exports = (function () {
                 var intersects = raycaster.intersectObject(self.pointCloud);
                 if (intersects.length) {
                     var nodeIndex = intersects[0].index;
+                    if (noResultCallback && previousNode && previousNode !== self.graph._nodes[nodeIndex]) {
+                        noResultCallback(previousNode);
+                    }
                     previousNode = self.graph._nodes[nodeIndex];
                     if (callback){
                         callback(previousNode);

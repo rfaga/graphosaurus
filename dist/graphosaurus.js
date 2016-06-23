@@ -41742,7 +41742,8 @@ module.exports = (function () {
 
     Frame.prototype._initMouseEvents = function (elem) {
         var self = this;
-        var createMouseHandler = function (callback) {
+        var previousNode = null;
+        var createMouseHandler = function (callback, noResultCallback) {
             var raycaster = new THREE.Raycaster();
 
             return function (evt) {
@@ -41775,14 +41776,22 @@ module.exports = (function () {
                 var intersects = raycaster.intersectObject(self.pointCloud);
                 if (intersects.length) {
                     var nodeIndex = intersects[0].index;
-                    callback(self.graph._nodes[nodeIndex]);
+                    previousNode = self.graph._nodes[nodeIndex];
+                    if (callback){
+                        callback(previousNode);
+                    }
+                } else {
+                    if (noResultCallback && previousNode){
+                        noResultCallback(previousNode);
+                        previousNode = null;
+                    }
                 }
             };
         };
 
-        if (this.graph._hover) {
+        if (this.graph._hover || this.graph._leave) {
             elem.addEventListener(
-                'mousemove', createMouseHandler(this.graph._hover), false);
+                'mousemove', createMouseHandler(this.graph._hover, this.graph._leave), false);
         }
 
         if (this.graph._click) {
@@ -41858,6 +41867,7 @@ module.exports = (function () {
      * @param {Number|String} props.bgColor - Hexadecimal or CSS-style string representation the color of the background, defaults to 'white'
      * @param {Number} props.bgOpacity - Number (between 0 and 1) indicating the percentage opacity of the background, defaults to 1 (100%)
      * @param {Function} props.hover - Callback function that will be called when the mouse hovers over a node. Event data will be passed as a parameter to the callback.
+     * @param {Function} props.leave - Callback function that will be called when the mouse leaves a node. Event data will be passed as a parameter to the callback.
      * @param {Function} props.click - Callback function that will be called when the mouse clicks a node. Event data will be passed as a parameter to the callback.
      */
     var Graph = function (props) {
@@ -41893,6 +41903,8 @@ module.exports = (function () {
         this._edgeOpacity = properties.edgeOpacity !== undefined ? properties.edgeOpacity : 1;
 
         this._hover = properties.hover || undefined;
+
+        this._leave = properties.leave || undefined;
 
         this._click = properties.click || undefined;
 

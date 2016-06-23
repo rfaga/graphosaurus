@@ -247,7 +247,8 @@ module.exports = (function () {
 
     Frame.prototype._initMouseEvents = function (elem) {
         var self = this;
-        var createMouseHandler = function (callback) {
+        var previousNode = null;
+        var createMouseHandler = function (callback, noResultCallback) {
             var raycaster = new THREE.Raycaster();
 
             return function (evt) {
@@ -280,14 +281,22 @@ module.exports = (function () {
                 var intersects = raycaster.intersectObject(self.pointCloud);
                 if (intersects.length) {
                     var nodeIndex = intersects[0].index;
-                    callback(self.graph._nodes[nodeIndex]);
+                    previousNode = self.graph._nodes[nodeIndex];
+                    if (callback){
+                        callback(previousNode);
+                    }
+                } else {
+                    if (noResultCallback && previousNode){
+                        noResultCallback(previousNode);
+                        previousNode = null;
+                    }
                 }
             };
         };
 
-        if (this.graph._hover) {
+        if (this.graph._hover || this.graph._leave) {
             elem.addEventListener(
-                'mousemove', createMouseHandler(this.graph._hover), false);
+                'mousemove', createMouseHandler(this.graph._hover, this.graph._leave), false);
         }
 
         if (this.graph._click) {
